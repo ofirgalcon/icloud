@@ -14,29 +14,29 @@ sys.path.insert(0, '/usr/local/munkireport')
 from munkilib import FoundationPlist
 
 def get_prefs():
-                
+
     prefs = ""
-        
+
     # Get all users' home folders
-    cmd = ['dscl', '.', '-readall', '/Users', 'NFSHomeDirectory']
+    cmd = ['/usr/bin/dscl', '.', '-readall', '/Users', 'NFSHomeDirectory']
     proc = subprocess.Popen(cmd, shell=False, bufsize=-1,
             stdin=subprocess.PIPE,
             stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     (output, unused_error) = proc.communicate()
-    
+
     for user in output.decode().split('\n'):
         if 'NFSHomeDirectory' in user and '/var/empty' not in user:
             userpath = user.replace("NFSHomeDirectory: ", "")+'/Library/Preferences/MobileMeAccounts.plist'
             if os.path.isfile(userpath):
-                prefs = prefs + userpath + "\n" 
-            
+                prefs = prefs + userpath + "\n"
+
     return prefs[:-1]
-    
+
 def process_prefs(prefs):
-    
+
     if prefs == "":
         return []
-        
+
     out = []
     for pref in prefs.split('\n'):
         pl = FoundationPlist.readPlist(pref)
@@ -45,7 +45,7 @@ def process_prefs(prefs):
             for item in account:
                 preffile['prefpath'] = pref.replace("/Library/Preferences/MobileMeAccounts.plist", "").replace("/Users/", "")
                 if item == 'AccountAlternateDSID':
-                    preffile['account_alternate_dsid'] = account[item]                    
+                    preffile['account_alternate_dsid'] = account[item]
                 elif item == 'AccountDSID':
                     preffile['account_dsid'] = account[item]
                 elif item == 'AccountDescription':
@@ -103,7 +103,7 @@ def process_prefs(prefs):
                                 preffile[service['Name'].lower()+'_dot_mac_mail_supported'] = to_bool(service[serviceitem])
 #                            elif serviceitem == 'protocol':
 #                                preffile[service['Name'].lower()+'_protocol'] = service[serviceitem]
-                                                  
+
             out.append(preffile)
     return out
 
@@ -154,7 +154,7 @@ def get_extra_prefs(pref):
                                 preffile['cloud_photo_only_keep_thumbnail'] = to_bool(pl[item][prefitem])
     except:
         pass
-                            
+
     # Get iMessages in iCloud settings, if OS version is greater than 10.13.4 (Darwin 1750)
     # Messages in the Cloud was introduced with 10.13.5 (Darwin 17.6.0)
     if getOsVersionLonger() > 1750:
@@ -167,7 +167,7 @@ def get_extra_prefs(pref):
                 preffile['imessage_syncing_enabled'] = pl[item]
             elif item == 'CloudKitIsSyncing':
                 preffile['imessage_currently_syncing'] = pl[item]
-                
+
     # Get Siri settings, if OS version is greater than 10.12 (Darwin 16)
     if getOsVersion() > 16:
         siripath = pref.replace("MobileMeAccounts.plist", "com.apple.assistant.backedup.plist")
@@ -176,7 +176,7 @@ def get_extra_prefs(pref):
             preffile['siri_enabled'] = 0
             if item == 'Cloud Sync Enabled':
                 preffile['siri_enabled'] = pl[item]
-                
+
     return preffile
 
 def to_bool(s):

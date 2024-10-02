@@ -11,7 +11,7 @@ class IcloudAddMojaveColumns extends Migration
     public function up()
     {
         $capsule = new Capsule();
-        
+
         $capsule::schema()->table($this->tableName, function (Blueprint $table) {
             $table->boolean('home_enabled')->nullable();
             $table->boolean('news_enabled')->nullable();

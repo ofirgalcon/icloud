@@ -94,7 +94,7 @@ class Icloud extends Migration
             $table->index('imessage_currently_syncing');
         });
     }
-    
+
     public function down()
     {
         $capsule = new Capsule();

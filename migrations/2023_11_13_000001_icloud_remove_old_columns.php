@@ -11,7 +11,7 @@ class IcloudRemoveOldColumns extends Migration
     public function up()
     {
         $capsule = new Capsule();
-        
+
         // These have to be split out because of SQLite limtations
         $capsule::schema()->table($this->tableName, function (Blueprint $table) {
             // These services are no longer supported by Apple
