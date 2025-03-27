@@ -139,15 +139,12 @@ def get_extra_prefs(pref):
         if os.path.isfile(photospath):
             pl = FoundationPlist.readPlist(photospath)
             preffile['cloud_photo_enabled'] = 0
-            # preffile['photo_stream_enabled'] = 0
             preffile['shared_streams_enabled'] = 0
             for item in pl:            
                 if item == 'com.apple.photo.icloud.cloudphoto':
-                        preffile['cloud_photo_enabled'] = pl[item]
-                # elif item == 'com.apple.photo.icloud.myphotostream':
-                        # preffile['photo_stream_enabled'] = pl[item]
+                        preffile['cloud_photo_enabled'] = to_bool(pl[item])
                 elif item == 'com.apple.photo.icloud.sharedstreams':
-                        preffile['shared_streams_enabled'] = pl[item]
+                        preffile['shared_streams_enabled'] = to_bool(pl[item])
                 elif item == 'service-preferences-com.apple.photo.icloud.cloudphoto':
                     for prefitem in pl[item]:
                         if prefitem == 'CPSPreferenceOnlyKeepThumbnailsKey':
@@ -156,17 +153,17 @@ def get_extra_prefs(pref):
         pass
 
     # Get iMessages in iCloud settings, if OS version is greater than 10.13.4 (Darwin 1750)
-    # Messages in the Cloud was introduced with 10.13.5 (Darwin 17.6.0)
     if getOsVersionLonger() > 1750:
         madridpath = pref.replace("MobileMeAccounts.plist", "com.apple.madrid.plist")
         if os.path.isfile(madridpath):
             pl = FoundationPlist.readPlist(madridpath)
             preffile['imessage_syncing_enabled'] = 0
             preffile['imessage_currently_syncing'] = 0
-            if item == 'CloudKitSyncingEnabled':
-                preffile['imessage_syncing_enabled'] = pl[item]
-            elif item == 'CloudKitIsSyncing':
-                preffile['imessage_currently_syncing'] = pl[item]
+            for item in pl:
+                if item == 'CloudKitSyncingEnabled':
+                    preffile['imessage_syncing_enabled'] = to_bool(pl[item])
+                elif item == 'CloudKitIsSyncing':
+                    preffile['imessage_currently_syncing'] = to_bool(pl[item])
 
     # Get Siri settings, if OS version is greater than 10.12 (Darwin 16)
     if getOsVersion() > 16:
@@ -174,8 +171,9 @@ def get_extra_prefs(pref):
         if os.path.isfile(siripath):
             pl = FoundationPlist.readPlist(siripath)
             preffile['siri_enabled'] = 0
-            if item == 'Cloud Sync Enabled':
-                preffile['siri_enabled'] = pl[item]
+            for item in pl:
+                if item == 'Cloud Sync Enabled':
+                    preffile['siri_enabled'] = to_bool(pl[item])
 
     return preffile
 

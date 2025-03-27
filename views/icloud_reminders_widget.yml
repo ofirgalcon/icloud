@@ -7,7 +7,9 @@ listing_link: /show/listing/icloud/icloud
 buttons:
   - label: yes
     i18n_label: enabled
-    class: btn-danger 
+    class: btn-danger
+    search_component: reminders_yes
   - label: no
     i18n_label: disabled
     class: btn-success
+    search_component: reminders_no
