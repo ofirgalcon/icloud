@@ -6,6 +6,7 @@ import sys
 import re
 import glob
 import platform
+import base64
 from datetime import datetime, timedelta, tzinfo
 
 sys.path.insert(0, '/usr/local/munki')
@@ -199,12 +200,90 @@ def getOsVersionLonger():
     darwin_version_tuple = platform.release().replace(".","")
     return int(darwin_version_tuple)
 
+def get_private_relay_status():
+    """
+    Get iCloud Private Relay status for the console user.
+    Returns tuple (username, status) where status is 1 if enabled, 0 if disabled.
+    Returns (None, None) if not available.
+    Based on brunerd's iCloudPrivateRelayStatus.sh script.
+    Only works on macOS 12 (Monterey) and later.
+    """
+    # Only for Monterey and up (macOS 12+, Darwin 21+)
+    if getOsVersion() < 21:
+        return (None, None)
+    
+    try:
+        # Get the console user
+        console_user_cmd = ['/usr/bin/stat', '-f', '%Su', '/dev/console']
+        proc = subprocess.Popen(console_user_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        console_user, _ = proc.communicate()
+        console_user = console_user.decode().strip()
+        
+        if not console_user or console_user == 'root':
+            return (None, None)
+        
+        # Get the console user's UID
+        uid_cmd = ['/usr/bin/stat', '-f', '%u', '/dev/console']
+        proc = subprocess.Popen(uid_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        uid, _ = proc.communicate()
+        uid = uid.decode().strip()
+        
+        # Export the preference domain data using launchctl asuser
+        domain = 'com.apple.networkserviceproxy'
+        export_cmd = ['/bin/launchctl', 'asuser', uid, 'sudo', '-u', console_user, 
+                      '/usr/bin/defaults', 'export', domain, '-']
+        proc = subprocess.Popen(export_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        parent_data, _ = proc.communicate()
+        
+        if not parent_data:
+            return (None, None)
+        
+        # Parse the parent plist
+        parent_plist = FoundationPlist.readPlistFromString(parent_data)
+        
+        # Get the NSPServiceStatusManagerInfo key which contains embedded plist data
+        if 'NSPServiceStatusManagerInfo' not in parent_plist:
+            return (None, None)
+        
+        encoded_data = parent_plist['NSPServiceStatusManagerInfo']
+        
+        # Convert NSCFData to bytes
+        decoded_data = bytes(encoded_data)
+        
+        # Parse the embedded plist
+        embedded_plist = FoundationPlist.readPlistFromString(decoded_data)
+        
+        # Navigate to the PrivacyProxyServiceStatus
+        # The structure is: $objects[1].PrivacyProxyServiceStatus
+        if '$objects' in embedded_plist and len(embedded_plist['$objects']) > 1:
+            obj = embedded_plist['$objects'][1]
+            # Check if obj has keys (works for both dict and ObjC NSDictionary)
+            if hasattr(obj, 'keys') and 'PrivacyProxyServiceStatus' in obj:
+                status = obj['PrivacyProxyServiceStatus']
+                return (console_user, 1 if status == 1 else 0)
+        
+        return (None, None)
+        
+    except Exception as e:
+        # If anything fails, return None (unknown)
+        return (None, None)
+
 def main():
     """Main"""
 
     # Get information about iCloud accounts
     prefs = get_prefs()
     result = process_prefs(prefs)
+
+    # Get Private Relay status for console user
+    console_user, private_relay_status = get_private_relay_status()
+    
+    # Add Private Relay status only to the console user's account
+    # prefpath contains the username (home folder name)
+    if console_user is not None and private_relay_status is not None:
+        for account in result:
+            if 'prefpath' in account and account['prefpath'] == console_user:
+                account['private_relay_enabled'] = private_relay_status
 
     # Write iCloud results to cache
     cachedir = '%s/cache' % os.path.dirname(os.path.realpath(__file__))

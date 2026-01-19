@@ -1,11 +1,11 @@
 <div id="lister" style="font-size: large; float: right;">
     <a href="/show/listing/icloud/icloud" title="List">
-        <i class="btn btn-default tab-btn fa fa-list"></i>
+        <i class="btn btn-default tab-btn fa fa-list-alt"></i>
     </a>
 </div>
 <div id="report_btn" style="font-size: large; float: right;">
     <a href="/show/report/icloud/icloud_report" title="Report">
-        <i class="btn btn-default tab-btn fa fa-th"></i>
+        <i class="btn btn-default tab-btn fa fa-bar-chart-o"></i>
     </a>
 </div>
 <h2><i class="fa fa-cloud"></i> <span data-i18n="icloud.icloud"></span></h2>

@@ -310,3 +310,18 @@ var clouddesktop_drive_filter = function(colNumber, d) {
         d.search.value = '';
     }
 }
+
+/**
+ * Private Relay filter
+ */
+var private_relay_filter = function(colNumber, d) {
+    if (d.search.value.match(/^private_relay_yes$/)) {
+        d.columns[colNumber].search.value = '= 1';
+        d.search.value = '';
+    }
+    
+    if (d.search.value.match(/^private_relay_no$/)) {
+        d.columns[colNumber].search.value = '= 0';
+        d.search.value = '';
+    }
+}
